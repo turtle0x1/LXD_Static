@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LXD</title>
+    <link href="/assets/bootstrap.min.css" rel="stylesheet">
+    <link href="/assets/styles.css" rel="stylesheet">
+    <link href="/assets/bootstrap-icons.css" rel="stylesheet">
+
+</head>
+
+<body>
+    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="#">LXD</a>
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+
+        <div class="input-group">
+            <span class="input-group-text" id="basic-addon1"><i class="bi bi-kanban"></i></span>
+            <select onchange="changeProjectSelect()" class="form-select" id="projectSelect"></select>
+        </div>
+
+
+    </header>
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+                <div class="position-sticky pt-3 sidebar-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="#">
+                                <i class="bi bi-kanban"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link disabled" href="#">
+                                <i class="bi bi-image-fill"></i>
+                                Images
+                                <span class="badge bg-danger float-end">TODO</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link disabled" href="#">
+                                <i class="bi bi-router-fill"></i>
+                                Networks
+                                <span class="badge bg-danger float-end">TODO</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link disabled" href="#">
+                                <i class="bi bi-people-fill"></i>
+                                Profiles
+                                <span class="badge bg-danger float-end">TODO</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link disabled" href="#">
+                                <i class="bi bi-kanban-fill"></i>
+                                Projects
+                                <span class="badge bg-danger float-end">TODO</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link disabled" href="#">
+                                <i class="bi bi-device-hdd-fill"></i>
+                                Storage
+                                <span class="badge bg-danger float-end">TODO</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="chartjs-size-monitor">
+                    <div class="chartjs-size-monitor-expand">
+                        <div class=""></div>
+                    </div>
+                    <div class="chartjs-size-monitor-shrink">
+                        <div class=""></div>
+                    </div>
+                </div>
+
+
+                <div class="row pt-3">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h2><i class="bi bi-cpu-fill"></i> CPU's</h2>
+                                <div id="cpuDetails">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h2><i class="bi bi-memory"></i> Memory</h2>
+                                <div id="memoryDetails">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h2><i class="bi bi-gpu-card"></i> GPU's</h2>
+                                <div id="gpuDetails">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h2><i class="bi bi-hdd-fill"></i> Storage</h2>
+                                <div id="storageDetails">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <div class="row">
+                    <div class="col-md-6">
+                        <h2>System Information</h2>
+                        <h3><i class="bi bi-motherboard-fill"></i> Motherboard</h3>
+                        <div id="motherboardDetails">
+                        </div>
+                        <h3><i class="bi bi-plugin"></i> Firmware</h3>
+                        <div id="firmwareDetails">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h2>Instances</h2>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">State</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">OS</th>
+                                    <th scope="col">Devices</th>
+                                </tr>
+                            </thead>
+                            <tbody id="instancesTbody">
+                            </tbody>
+                        </table>
+                    </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/assets/bootstrap.bundle.min.js"></script>
+    <script src="/assets/lxdClient.js"></script>
+    <script src="/assets/lxdConstants.js"></script>
+    <script src="/assets/general.js"></script>
+    <script>
+        var client = new LxdClient("127.0.0.1");
+
+        client.getResources(function() {
+            let result = JSON.parse(this.responseText);
+            let resources = result.metadata
+
+            let cpuHtml = "";
+            let cpuIndentKey = "name"; //TODO Doesnt work on LXD  < 4
+            resources.cpu.sockets.forEach((item, _) => {
+                cpuHtml += `<div class="ps-2">
+                    ${item[cpuIndentKey]}
+                </div>`
+            });
+
+            var cpuDetails = document.getElementById("cpuDetails");
+            cpuDetails.insertAdjacentHTML('beforeend', cpuHtml)
+
+            let gpuHtml = ""
+            if (resources.hasOwnProperty("gpu") && resources.gpu.cards.length > 0) {
+                resources.gpu.cards.forEach((gpu, i) => {
+                    let name = gpu.hasOwnProperty("nvidia") && gpu.nvidia.hasOwnProperty("model") ? gpu.nvidia.model : gpu.vendor + " - " + gpu.product
+                    gpuHtml += `<div class="ps-2">${name}</div>`;
+                });
+            } else {
+                gpuHtml += `<div class="ps-2">No GPU's</div>`;
+            }
+
+            var gpuDetails = document.getElementById("gpuDetails");
+            gpuDetails.insertAdjacentHTML('beforeend', gpuHtml)
+
+            let memoryHtml = "";
+
+            let width = (resources.memory.used / resources.memory.total) * 100
+            let memoryDetails = document.getElementById("memoryDetails");
+            memoryDetails.insertAdjacentHTML('beforeend', `
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" aria-label="Example with label" style="width: ${width}%;" aria-valuenow="${width}" aria-valuemin="0" aria-valuemax="100">${width.toFixed(2)}%</div>
+                </div>
+            `)
+
+            let storageTotalSize = 0;
+            let totalDisks = 0;
+
+            if (resources.hasOwnProperty("storage") && resources.storage.disks.length > 0) {
+                resources.storage.disks.forEach((disk, i) => {
+                    storageTotalSize += disk.size
+                    totalDisks++;
+                });
+            }
+
+            let storageHtml = `${totalDisks} Disks - Totaling ${formatBytes(storageTotalSize)}`;
+
+            let storageDetails = document.getElementById("storageDetails");
+            storageDetails.insertAdjacentHTML('beforeend', storageHtml)
+        });
+
+        loadInstances("default")
+
+        client.getProjects(function() {
+            let result = JSON.parse(this.responseText);
+            let projects = result.metadata
+            let projectOptions = "";
+            projects.forEach((project, _) => {
+                project = project.replace("/1.0/projects/", "")
+                let s = project == "default" ? "selected" : ""
+                projectOptions += `<option value="${project}" ${s}>${project}</option>`
+            });
+            var select = document.getElementById("projectSelect");
+            select.insertAdjacentHTML('beforeend', projectOptions)
+        }, RECURSION_NONE);
+
+
+        function changeProjectSelect() {
+            let project = document.getElementById("projectSelect").value
+            loadInstances(project)
+
+        }
+
+        function loadInstances(project) {
+            client.setProject(project)
+            var instanceTbody = document.getElementById("instancesTbody");
+            instanceTbody.innerHTML = ''
+            client.getInstances(function() {
+                let result = JSON.parse(this.responseText);
+                let instances = result.metadata
+                let instanceTrs = "";
+                instances.forEach((instance, _) => {
+                    let os = "Unknown";
+                    if (instance.config.hasOwnProperty("image.os")) {
+                        os = instance.config["image.os"]
+                    }
+
+                    let icon = STATUS_CODE_TO_ICON_MAP[instance.status_code]
+                    let rowClass = STATUS_CODE_TO_TABLE_COLOR[instance.status_code]
+
+                    instanceTrs += `<tr class="${rowClass}">
+                        <td>${icon}</td>
+                        <td>${instance.name}</td>
+                        <td>${os}</td>
+                        <td>${Object.keys(instance.devices).length}</td>
+                    </tr>`
+                });
+
+                instanceTbody.insertAdjacentHTML('beforeend', instanceTrs)
+            }, RECURSION_SOME);
+        }
+    </script>
+</body>
+
+</html>
